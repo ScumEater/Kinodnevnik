@@ -5,6 +5,11 @@ on:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing or new release tag to attach the APK to"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -27,11 +32,12 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK platform
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Use Android SDK preinstalled on the runner
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          test -d /usr/local/lib/android/sdk/platforms/android-35
+          test -d /usr/local/lib/android/sdk/build-tools/35.0.1
 
       - name: Build debug APK
         working-directory: android-app
@@ -39,20 +45,29 @@ jobs:
 
       - name: Prepare release files
         id: release_files
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+        env:
+          REQUESTED_TAG: ${{ inputs.release_tag }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          release_tag="${REQUESTED_TAG:-${GITHUB_REF_NAME}}"
+          version="${release_tag#v}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${release_tag}" >> "$GITHUB_OUTPUT"
           cp android-app/app/build/outputs/apk/debug/app-debug.apk "Kinodnevnik-${version}.apk"
           zip -qr "Kinodnevnik-project-${version}.zip" README.md movie_tracker.html movie-library.json android-app \
             -x 'android-app/.gradle/*' 'android-app/**/build/*' 'android-app/local.properties'
 
       - name: Publish APK and source archive
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Kinodnevnik ${{ github.ref_name }}
-          generate_release_notes: true
-          files: |
-            Kinodnevnik-${{ steps.release_files.outputs.version }}.apk
-            Kinodnevnik-project-${{ steps.release_files.outputs.version }}.zip
+        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release_files.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release_files.outputs.version }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --title "Kinodnevnik $RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" \
+            "Kinodnevnik-${RELEASE_VERSION}.apk" \
+            "Kinodnevnik-project-${RELEASE_VERSION}.zip" \
+            --clobber

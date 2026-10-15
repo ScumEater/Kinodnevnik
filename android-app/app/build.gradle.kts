@@ -5,6 +5,7 @@ plugins {
 android {
     namespace = "ru.nick.kinodnevnik"
     compileSdk = 35
+    buildToolsVersion = "35.0.1"
 
     defaultConfig {
         applicationId = "ru.nick.kinodnevnik"
