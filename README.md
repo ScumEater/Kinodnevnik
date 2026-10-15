@@ -15,7 +15,7 @@
 
 ## Android
 
-Исходники находятся в `android-app/` внутри архива проекта. Откройте папку в Android Studio и выполните **Build → Build APK(s)**. Для сборки нужны JDK 17 и Android SDK Platform 35. Минимальная версия Android — 7.0 (API 24); текущая версия приложения — 1.10.
+Исходники находятся в [папке `android-app/`](https://github.com/ScumEater/Kinodnevnik/tree/main/android-app) репозитория и в архиве проекта. Откройте эту папку в Android Studio и выполните **Build → Build APK(s)**. Для сборки нужны JDK 17 и Android SDK Platform 35. Минимальная версия Android — 7.0 (API 24); текущая версия приложения — 1.10.
 
 Android-приложение хранит библиотеку в IndexedDB внутри WebView и переносит прежние данные из `localStorage`. При первом запуске начальный список импортируется из `android-app/app/src/main/assets/UliyanaFIlms.json`.
 
