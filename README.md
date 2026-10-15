@@ -6,6 +6,8 @@
 
 - [Android APK 1.10](https://github.com/ScumEater/Kinodnevnik/releases/download/v1.10/Kinodnevnik-1.10.apk)
 - [Исходный проект (ZIP)](https://github.com/ScumEater/Kinodnevnik/raw/refs/heads/main/Kinodnevnik-project.zip)
+- [Веб-версия HTML](https://github.com/ScumEater/Kinodnevnik/blob/main/movie_tracker.html)
+- [JSON-библиотека фильмов](https://github.com/ScumEater/Kinodnevnik/blob/main/movie-library.json)
 
 ## Веб-версия
 
@@ -13,7 +15,7 @@
 
 ## Android
 
-Исходники находятся в `android-app/`. Откройте папку в Android Studio и выполните **Build → Build APK(s)**. Для сборки нужны JDK 17 и Android SDK Platform 35. Минимальная версия Android — 7.0 (API 24); текущая версия приложения — 1.10.
+Исходники находятся в `android-app/` внутри архива проекта. Откройте папку в Android Studio и выполните **Build → Build APK(s)**. Для сборки нужны JDK 17 и Android SDK Platform 35. Минимальная версия Android — 7.0 (API 24); текущая версия приложения — 1.10.
 
 Android-приложение хранит библиотеку в IndexedDB внутри WebView и переносит прежние данные из `localStorage`. При первом запуске начальный список импортируется из `android-app/app/src/main/assets/UliyanaFIlms.json`.
 
