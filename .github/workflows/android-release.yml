@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build debug APK
+        working-directory: android-app
+        run: gradle --no-daemon --stacktrace assembleDebug
+
+      - name: Prepare release files
+        id: release_files
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk "Kinodnevnik-${version}.apk"
+          zip -qr "Kinodnevnik-project-${version}.zip" README.md movie_tracker.html movie-library.json android-app \
+            -x 'android-app/.gradle/*' 'android-app/**/build/*' 'android-app/local.properties'
+
+      - name: Publish APK and source archive
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Kinodnevnik ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            Kinodnevnik-${{ steps.release_files.outputs.version }}.apk
+            Kinodnevnik-project-${{ steps.release_files.outputs.version }}.zip

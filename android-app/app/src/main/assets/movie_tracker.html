@@ -583,6 +583,32 @@
       body.android-cinema .coverflow-slide { width: min(28vw, 250px); height: 62svh; }
       body.android-cinema .coverflow-info { right: 16px; bottom: 16px; left: auto; width: min(46vw, 480px); max-height: 88svh; margin: 0; }
     }
+    /* Keep the add form aligned and fully usable on short mobile screens. */
+    .planned-toggle { flex-direction: row; justify-content: flex-start; text-align: left; }
+    .planned-toggle input { flex: 0 0 18px; margin: 0; }
+    .watched-field { grid-column: 1 / -1; }
+    @media (max-width: 760px) {
+      .form-panel.is-expanded,
+      body.android-cinema .form-panel.is-expanded {
+        inset: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom));
+        padding: clamp(13px, 3.5vw, 18px);
+      }
+      .form-panel.is-expanded #formBody,
+      body.android-cinema .form-panel.is-expanded #formBody {
+        min-height: 0;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+      }
+      .form-panel.is-expanded .panel-heading { gap: 8px; }
+      .form-panel.is-expanded .panel-heading h2 { font-size: clamp(20px, 5vw, 24px); line-height: 1.1; }
+      .form-panel.is-expanded .panel-heading .button { flex: 0 0 auto; min-height: 42px; padding: 8px 11px; }
+      .form-panel.is-expanded .form-fields { gap: clamp(9px, 2.5vw, 12px); }
+    }
+    @media (max-width: 760px) and (max-height: 700px) {
+      .form-panel.is-expanded,
+      body.android-cinema .form-panel.is-expanded { padding: 11px; }
+      .form-panel.is-expanded .panel-heading { margin-bottom: 8px; }
+    }
   </style>
 </head>
 <body class="android-cinema">
