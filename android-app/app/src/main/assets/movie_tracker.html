@@ -1077,13 +1077,95 @@
           }
           if (/^(?:список\s+)?(?:фильмы|фильмов|кинолента)\s*[:：]?\s*$/i.test(line)) {
             mode = 'movies';
- 
+            currentGenre = '';
+            continue;
+          }
+          const explicitGenre = line.match(/^(?:жанр|genre)\s*[:：=-]\s*(.+)$/i);
+          if (explicitGenre) {
+            currentGenre = canonicalGenre(explicitGenre[1]);
+            mode = 'movies';
+            continue;
+          }
+          const bracketHeader = line.match(/^\[([^\]]{1,40})\]$/);
+          const heading = line.match(/^(?:#{1,6}\s*)?(.{1,40}?)[：:]$/u);
+          const knownLineGenre = knownGenres.get(normalizeGenre(line.replace(/^#{1,6}\s*/, '')));
+          if (mode === 'genres') {
+            if (knownLineGenre || bracketHeader || heading) {
+              const name = knownLineGenre || (bracketHeader && bracketHeader[1]) || (heading && heading[1]);
+              const genre = canonicalGenre(name);
+              if (genre) catalogGenres.set(normalizeGenre(genre), genre);
+            } else addGenreCatalogLine(line);
+            continue;
+          }
+          if (bracketHeader || heading || knownLineGenre) {
+            const name = knownLineGenre || (bracketHeader && bracketHeader[1]) || (heading && heading[1]);
+            currentGenre = canonicalGenre(name);
+            continue;
+          }
+          addMovie(line);
+        }
+        return parsedMovies.filter(Boolean);
+      }
+      async function readTextFile(file) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes);
+        if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be').decode(bytes);
+        try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+        catch { return new TextDecoder('windows-1251').decode(bytes); }
+      }
+      function parseMovieArray(raw) {
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        const rows = Array.isArray(parsed) ? parsed : parsed?.movies;
+        return Array.isArray(rows) ? rows.map(cleanMovie).filter(Boolean) : [];
+      }
+      function readLocalStorageMovies() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          return { raw, movies: parseMovieArray(raw) };
+        }
+        catch { return { raw: null, movies: [] }; }
+      }
+      function readLocalStorageFallback() {
         try {
           const raw = localStorage.getItem(STORAGE_FALLBACK_KEY);
           if (!raw) return null;
           const parsed = JSON.parse(raw);
           if (!Array.isArray(parsed.movies)) return null;
-          return { movies: parsed.movies.mquest.onsuccess = () => resolve(request.result || []);
+          return { movies: parsed.movies.map(cleanMovie).filter(Boolean), updatedAt: Number(parsed.updatedAt) || 0, seedApplied: Boolean(parsed.seedApplied), legacyMigrated: Boolean(parsed.legacyMigrated) };
+        } catch { return null; }
+      }
+      function openMovieDatabase() {
+        return new Promise((resolve, reject) => {
+          if (!('indexedDB' in window)) { reject(new Error('IndexedDB недоступна')); return; }
+          let request;
+          let settled = false;
+          const timeout = window.setTimeout(() => finish(reject, new Error('База данных отвечает слишком долго')), 6000);
+          const finish = (callback, value) => {
+            if (settled) return false;
+            settled = true;
+            window.clearTimeout(timeout);
+            callback(value);
+            return true;
+          };
+          try { request = indexedDB.open(DATABASE_NAME, 1); }
+          catch (error) { finish(reject, error); return; }
+          request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(DATABASE_STORE)) db.createObjectStore(DATABASE_STORE, { keyPath: 'id' });
+          };
+          request.onsuccess = () => {
+            if (!finish(resolve, request.result)) request.result.close();
+          };
+          request.onerror = () => finish(reject, request.error || new Error('Не удалось открыть базу фильмов'));
+          request.onblocked = () => finish(reject, new Error('База фильмов занята другой вкладкой'));
+        });
+      }
+      function readDatabaseRows() {
+        return new Promise((resolve, reject) => {
+          const transaction = movieDatabase.transaction(DATABASE_STORE, 'readonly');
+          const request = transaction.objectStore(DATABASE_STORE).getAll();
+          request.onsuccess = () => resolve(request.result || []);
           request.onerror = () => reject(request.error || new Error('Не удалось прочитать базу фильмов'));
           transaction.onabort = () => reject(transaction.error || new Error('Чтение базы отменено'));
         });
@@ -1097,13 +1179,79 @@
           for (const movie of rows) store.put(movie);
           transaction.oncomplete = () => resolve();
           transaction.onerror = () => reject(transaction.error || new Error('Не удалось сохранить базу фильмов'));
-          transaction.onabort = () => reject(transaction.error || nedAt: fallback.updatedAt }
+          transaction.onabort = () => reject(transaction.error || new Error('Сохранение базы отменено'));
+        });
+      }
+      function writeLocalStorageFallback(rows, meta) {
+        try {
+          localStorage.setItem(STORAGE_FALLBACK_KEY, JSON.stringify({ movies: rows, updatedAt: meta.updatedAt, seedApplied: Boolean(meta.seedApplied), legacyMigrated: true }));
+          return true;
+        } catch { return false; }
+      }
+      async function initializeMovieStorage() {
+        const legacy = readLocalStorageMovies();
+        const fallback = readLocalStorageFallback();
+        try {
+          movieDatabase = await openMovieDatabase();
+          const storedRows = await readDatabaseRows();
+          const storedMeta = storedRows.find(row => row?.id === DATABASE_META_ID);
+          let selectedMovies = storedRows.filter(row => row?.id !== DATABASE_META_ID).map(cleanMovie).filter(Boolean);
+          storageMeta = storedMeta
+            ? { seedApplied: Boolean(storedMeta.seedApplied), legacyMigrated: Boolean(storedMeta.legacyMigrated), updatedAt: Number(storedMeta.updatedAt) || 0 }
+            : { seedApplied: legacy.raw !== null, legacyMigrated: false, updatedAt: 0 };
+
+          if (fallback && (!storedMeta || fallback.updatedAt > storageMeta.updatedAt)) {
+            selectedMovies = fallback.movies;
+            storageMeta = { seedApplied: fallback.seedApplied, legacyMigrated: true, updatedAt: fallback.updatedAt || Date.now() };
+          } else if (!storedMeta) {
+            selectedMovies = legacy.movies;
+            storageMeta = { ...storageMeta, legacyMigrated: true, updatedAt: Date.now() };
+          } else if (!storageMeta.legacyMigrated && !selectedMovies.length && legacy.movies.length) {
+            // Recover an older localStorage library if a previous IndexedDB attempt left an empty database.
+            selectedMovies = legacy.movies;
+            storageMeta = { ...storageMeta, seedApplied: true, legacyMigrated: true, updatedAt: Date.now() };
+          }
+
+          const needsWrite = !storedMeta || !storageMeta.legacyMigrated || (fallback && fallback.updatedAt > (Number(storedMeta.updatedAt) || 0));
+          if (needsWrite) await writeDatabaseRows(selectedMovies, storageMeta);
+          storageBackend = 'indexedDB';
+          try { localStorage.removeItem(STORAGE_FALLBACK_KEY); } catch { /* The database copy is already committed. */ }
+          try { navigator.storage?.persist?.().catch(() => false); } catch { /* Persistence requests are best effort. */ }
+          return selectedMovies;
+        } catch (error) {
+          try { movieDatabase?.close(); } catch { /* Ignore a failed database close. */ }
+          movieDatabase = null;
+          storageBackend = fallback ? 'fallback' : 'localStorage';
+          storageMeta = fallback
+            ? { seedApplied: fallback.seedApplied, legacyMigrated: true, updatedAt: fallback.updatedAt }
             : { seedApplied: legacy.raw !== null, legacyMigrated: false, updatedAt: 0 };
           return fallback ? fallback.movies : legacy.movies;
         }
       }
       async function saveMovies() {
-        await storageReadyhot));
+        await storageReady;
+        const snapshot = movies.map(movie => ({ ...movie }));
+        const save = async () => {
+          const updatedAt = Date.now();
+          if (storageBackend === 'indexedDB' && movieDatabase) {
+            try {
+              await writeDatabaseRows(snapshot, { ...storageMeta, updatedAt });
+              storageMeta.updatedAt = updatedAt;
+              try { localStorage.removeItem(STORAGE_FALLBACK_KEY); } catch { /* The database write succeeded. */ }
+              return true;
+            } catch {
+              storageBackend = 'fallback';
+              storageMeta.updatedAt = updatedAt;
+            }
+          }
+          if (storageBackend === 'fallback') {
+            storageMeta.updatedAt = updatedAt;
+            if (writeLocalStorageFallback(snapshot, storageMeta)) return true;
+            showToast('Не удалось сохранить базу. Освободите место и экспортируйте библиотеку.');
+            return false;
+          }
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
             storageMeta.updatedAt = updatedAt;
             return true;
           } catch {
@@ -1120,7 +1268,47 @@
       }
       function formatDate(value) {
         const [year, month, day] = value.split('-').map(Number);
-        return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', mon[];
+        return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(year, month - 1, day));
+      }
+      function plural(count, forms) {
+        const n = Math.abs(count) % 100;
+        const last = n % 10;
+        if (n > 10 && n < 20) return forms[2];
+        if (last > 1 && last < 5) return forms[1];
+        if (last === 1) return forms[0];
+        return forms[2];
+      }
+      function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+      }
+      function syncFilterOptions(select, values, firstLabel) {
+        const previous = select.value;
+        const unique = [...new Set(values.filter(Boolean).map(String))].sort((a, b) => a.localeCompare(b, 'ru', { numeric: true }));
+        select.innerHTML = `<option value="">${firstLabel}</option>${unique.map(value => `<option value="${escapeHTML(value)}">${escapeHTML(value)}</option>`).join('')}`;
+        if (unique.includes(previous)) select.value = previous;
+      }
+      function setViewMode(mode, persist = true) {
+        viewMode = mode === 'grid' ? 'grid' : 'list';
+        list.classList.toggle('view-grid', viewMode === 'grid');
+        document.querySelectorAll('.view-button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === viewMode)));
+        if (persist) try { localStorage.setItem(VIEW_KEY, viewMode); } catch { /* View switch still works for this session. */ }
+      }
+      function setActiveNav(section) {
+        const nextSection = section === 'search' ? 'collection' : section;
+        const changed = activeNavSection !== nextSection;
+        activeNavSection = nextSection;
+        if (changed) {
+          document.body.classList.remove('nav-transition');
+          requestAnimationFrame(() => document.body.classList.add('nav-transition'));
+        }
+        document.querySelectorAll('.mobile-nav [data-nav]').forEach(button => button.setAttribute('aria-current', String(button.dataset.nav === activeNavSection ? 'page' : 'false')));
+      }
+      function viewDates(movie) {
+        return movie.status === 'watched' ? [movie.watchedAt, ...movie.rewatchDates].filter(Boolean).sort() : [];
       }
     function setCoverflowInfoOpen(open) {
         coverflowInfoOpen = Boolean(open);
@@ -1147,7 +1335,7 @@
         const topGenres = sortedGenres.slice(0, 6);
         if (sortedGenres.length > 6) topGenres.push(['Другие жанры', sortedGenres.slice(6).reduce((sum, item) => sum + item[1], 0)]);
         const genreChart = document.getElementById('genreChart');
-        genreChart.innerHTML = topGenres.length ? topGenres.map(([genre, count]) => `<div claount}</span></div>`).join('') : '<span class="chart-empty">Добавьте жанр фильму, чтобы увидеть распределение.</span>';
+        genreChart.innerHTML = topGenres.length ? topGenres.map(([genre, count]) => `<div class="genre-row"><span class="genre-name">${escapeHTML(`${genreIcons[genre] || '🎞️'} ${genre}`)}</span><div class="genre-bar-track"><div class="genre-bar" style="width:${Math.max(4, count / topGenres[0][1] * 100)}%"></div></div><span class="genre-count">${count}</span></div>`).join('') : '<span class="chart-empty">Добавьте жанр фильму, чтобы увидеть распределение.</span>';
       }
       function render() {
         const search = document.getElementById('search');
@@ -2261,7 +2449,12 @@
       syncPlannedFields();
       setFormExpanded(false);
       const app = document.querySelector('.app');
-      app.inert = true;
+      // Render the localStorage snapshot immediately. The UI stays responsive even
+      // if a WebView's IndexedDB open request is delayed or blocked.
+      movies = readLocalStorageMovies().movies;
+      app.inert = false;
+      render();
+      document.body.classList.remove('storage-loading');
       storageReady = initializeMovieStorage();
       window.__kinodnevnikStorageReady = storageReady;
       storageReady.then(loadedMovies => {
