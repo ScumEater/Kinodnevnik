@@ -404,15 +404,17 @@
     body.android-cinema.stats-open .layout { display: none; }
     body.android-cinema.stats-open .stats { display: grid; }
     body.android-cinema.stats-open .charts { display: grid; }
-    body.android-cinema .search-screen { display: none; margin-bottom: 11px; padding: 16px; overflow: hidden; border-color: #ffffff24; border-radius: 24px; background: #0c3028e8; box-shadow: 0 22px 55px #001b1666; backdrop-filter: blur(18px); }
-    body.android-cinema.search-open .search-screen { display: block; }
-    body.android-cinema.search-open .layout,
-    body.android-cinema.search-open .stats,
-    body.android-cinema.search-open .charts { display: none !important; }
+    body.android-cinema .search-screen { display: none; }
+    body.android-cinema .search-backdrop { display: none; }
+    body.android-cinema.search-open { overflow: hidden; }
+    body.android-cinema.search-open .search-backdrop { position: fixed; z-index: 21; inset: 0; display: block; width: 100%; height: 100%; border: 0; background: #03140fc9; backdrop-filter: blur(7px); animation: search-backdrop-in .18s ease both; }
+    body.android-cinema.search-open .search-screen { position: fixed; z-index: 22; inset: max(58px, calc(env(safe-area-inset-top) + 8px)) 10px calc(82px + env(safe-area-inset-bottom)); display: block; max-width: 620px; overflow-y: auto; margin: 0 auto; padding: 16px; border-color: #ffffff32; border-radius: 24px; background: #0c3028f5; box-shadow: 0 22px 55px #001b1699; backdrop-filter: blur(20px); animation: search-panel-in .22s cubic-bezier(.2,.8,.2,1) both; }
     body.android-cinema.stats-open .search-screen { display: none !important; }
     body.android-cinema .search-screen-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
     body.android-cinema .search-screen-head h2 { margin: 0; color: #f1fff7; font-size: 19px; }
     body.android-cinema .search-screen-head p { margin: 4px 0 0; color: #a8c8b8; font-size: 11px; line-height: 1.4; }
+    body.android-cinema .search-head-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; }
+    body.android-cinema .search-close { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #ffffff2b; border-radius: 50%; color: #eafff4; background: #ffffff0c; font-size: 24px; line-height: 1; }
     body.android-cinema .search-screen .toolbar { margin: 0; }
     body.android-cinema .search-screen .poster-library-actions,
     body.android-cinema .search-screen .library-danger-row { padding-top: 9px; }
@@ -501,13 +503,66 @@
     body.android-cinema .charts { grid-template-columns: 1fr; gap: 10px; }
     body.android-cinema .chart-panel { border-color: #ffffff20; background: #103a30d9; }
     body.android-cinema .chart-panel h2 { color: #edfff5; }
-    body.android-cinema .mobile-nav { position: fixed; z-index: 15; left: 50%; bottom: max(9px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: min(560px, calc(100% - 22px)); padding: 6px; border: 1px solid #ffffff2e; border-radius: 23px; background: #06271fe8; box-shadow: 0 13px 38px #0015109c, inset 0 1px #ffffff20; backdrop-filter: blur(24px) saturate(1.35); transform: translateX(-50%); }
+    body.android-cinema .mobile-nav { position: fixed; z-index: 25; left: 50%; bottom: max(9px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 4px; width: min(460px, calc(100% - 22px)); padding: 6px; border: 1px solid #ffffff2e; border-radius: 23px; background: #06271fe8; box-shadow: 0 13px 38px #0015109c, inset 0 1px #ffffff20; backdrop-filter: blur(24px) saturate(1.35); transform: translateX(-50%); }
+    body.android-cinema .mobile-nav-group { display: grid; min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px; }
     body.android-cinema .mobile-nav button { min-height: 54px; color: #b1d0bf; }
     body.android-cinema .mobile-nav button[aria-current="page"] { color: #a9f2d0; background: #ffffff12; }
     body.android-cinema .mobile-nav .nav-add > .nav-icon { width: 32px; height: 32px; border-radius: 50%; color: #063126; background: linear-gradient(145deg, #a4f5d0, #53c893); box-shadow: 0 0 18px #54d59b55; }
     body.android-cinema .mobile-nav .nav-add > .nav-icon svg { width: 21px; height: 21px; stroke-width: 2.2; }
+    body.android-cinema .mobile-nav .nav-add { transform: translateY(-5px); }
+    body.android-cinema .mobile-nav button { transition: color .18s ease, background .18s ease, transform .2s cubic-bezier(.2,.8,.2,1); }
+    body.android-cinema .mobile-nav button[aria-current="page"] .nav-icon { animation: nav-icon-pop .24s cubic-bezier(.2,.8,.2,1) both; }
+    body.android-cinema .mobile-nav .nav-add[aria-current="page"] { transform: translateY(-7px) scale(1.04); }
+    body.android-cinema.search-open .mobile-nav { opacity: 0; pointer-events: none; transform: translate(-50%, 12px); }
+    body.android-cinema .floating-search { position: fixed; z-index: 14; top: 43%; right: max(10px, env(safe-area-inset-right)); display: grid; width: 46px; height: 46px; place-items: center; border: 1px solid #b5ffdd75; border-radius: 50%; color: #eafff4; background: #07513cdb; box-shadow: 0 6px 22px #001a1575, 0 0 20px #6ee7b733; backdrop-filter: blur(14px); transition: transform .18s ease, background .18s ease, opacity .18s ease; }
+    body.android-cinema .floating-search svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    body.android-cinema .floating-search:active { transform: scale(.92); }
+    body.android-cinema.form-open .floating-search,
+    body.android-cinema.stats-open .floating-search,
+    body.android-cinema.search-open .floating-search { opacity: 0; pointer-events: none; }
+    @keyframes nav-icon-pop { 45% { transform: scale(1.18); } 100% { transform: scale(1); } }
+    @keyframes search-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes search-panel-in { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes section-enter { from { opacity: .65; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    body.android-cinema.nav-transition .library,
+    body.android-cinema.nav-transition .stats,
+    body.android-cinema.nav-transition .charts,
+    body.android-cinema.nav-transition .form-panel { animation: section-enter .2s cubic-bezier(.2,.8,.2,1) both; }
     body.android-cinema .form-panel { border-color: #ffffff26; background: #103a30f5; }
     body.android-cinema .form-panel label { color: #c1d9cb; }
+    body.android-cinema .form-panel,
+    body.android-cinema .form-panel * { min-width: 0; }
+    body.android-cinema .form-panel .panel-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+    body.android-cinema .form-panel .panel-heading h2 { margin: 0; font-size: clamp(19px, 5.4vw, 24px); line-height: 1.12; overflow-wrap: anywhere; }
+    body.android-cinema .form-panel .panel-heading .button { min-width: 0; min-height: 40px; padding: 7px 9px; font-size: 12px; white-space: nowrap; }
+    body.android-cinema .form-panel .form-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.android-cinema .form-panel .field,
+    body.android-cinema .form-panel .field label,
+    body.android-cinema .form-panel .advanced-fields,
+    body.android-cinema .form-panel .advanced-fields summary { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+    body.android-cinema .form-panel input:not([type="checkbox"]),
+    body.android-cinema .form-panel select,
+    body.android-cinema .form-panel textarea { width: 100%; min-width: 0; max-width: 100%; font-size: 16px; }
+    body.android-cinema .form-panel .button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+    body.android-cinema .form-panel .field.full { grid-column: 1 / -1; }
+    @media (max-width: 360px) {
+      body.android-cinema .form-panel { padding: 12px; }
+      body.android-cinema .form-panel .panel-heading h2 { font-size: 19px; }
+      body.android-cinema .form-panel .panel-heading .button { padding-inline: 7px; font-size: 11px; }
+      body.android-cinema .form-panel .form-fields { grid-template-columns: minmax(0, 1fr); }
+      body.android-cinema .form-panel .field.full { grid-column: 1; }
+    }
+    @media (max-height: 620px) {
+      body.android-cinema .form-panel.is-expanded { inset: max(4px, env(safe-area-inset-top)) 6px max(4px, env(safe-area-inset-bottom)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      body.android-cinema .mobile-nav button,
+      body.android-cinema .floating-search { transition-duration: .01ms; }
+      body.android-cinema.nav-transition .library,
+      body.android-cinema.nav-transition .stats,
+      body.android-cinema.nav-transition .charts,
+      body.android-cinema.nav-transition .form-panel { animation-duration: .01ms; }
+    }
     body.android-cinema.form-open { overflow: hidden; }
     body.android-cinema.form-open::before { position: fixed; z-index: 19; inset: 0; background: #02170fbd; backdrop-filter: blur(10px); content: ''; pointer-events: none; }
     body.android-cinema.form-open .mobile-nav { opacity: 0; pointer-events: none; }
@@ -569,6 +624,12 @@
     :root[data-theme="light"] body.android-cinema .mobile-nav { border-color: #47785c38; background: #f7fff0ec; box-shadow: 0 13px 38px #285a3936, inset 0 1px #ffffff; }
     :root[data-theme="light"] body.android-cinema .mobile-nav button { color: #547462; }
     :root[data-theme="light"] body.android-cinema .mobile-nav button[aria-current="page"] { color: #1c6240; background: #dff3e6; }
+    :root[data-theme="light"] body.android-cinema .floating-search { border-color: #47785c55; color: #20583f; background: #f7fff0eb; box-shadow: 0 6px 22px #285a3936, 0 0 18px #54b98725; }
+    :root[data-theme="light"] body.android-cinema.search-open .search-backdrop { background: #12352f88; }
+    :root[data-theme="light"] body.android-cinema.search-open .search-screen { border-color: #47785c55; background: #f8fffaf5; box-shadow: 0 22px 55px #285a3945; }
+    :root[data-theme="light"] body.android-cinema .search-screen-head h2 { color: #1c4731; }
+    :root[data-theme="light"] body.android-cinema .search-screen-head p { color: #557565; }
+    :root[data-theme="light"] body.android-cinema .search-close { border-color: #47785c44; color: #24563c; background: #ffffffa8; }
     :root[data-theme="light"] body.android-cinema .form-panel { border-color: #5c987436; background: #f8fffbee; }
     :root[data-theme="light"] body.android-cinema .form-panel.is-expanded { background: #f5fff8; }
     :root[data-theme="light"] body.android-cinema .form-panel label { color: #3d5d49; }
@@ -630,8 +691,9 @@
       <div class="stat"><div class="stat-label">Хочу посмотреть</div><div class="stat-value" id="plannedStat">0</div></div>
     </section>
 
-    <section class="panel search-screen" id="searchScreen" aria-labelledby="searchHeading">
-      <div class="search-screen-head"><div><h2 id="searchHeading">Поиск и фильтры</h2><p>Сузьте список по названию, жанру, году или статусу.</p></div><span class="count" id="searchResultCount">0 фильмов</span></div>
+    <button class="search-backdrop" id="searchBackdrop" type="button" aria-label="Закрыть поиск"></button>
+    <section class="panel search-screen" id="searchScreen" aria-labelledby="searchHeading" role="dialog" aria-modal="true">
+      <div class="search-screen-head"><div><h2 id="searchHeading">Поиск и фильтры</h2><p>Сузьте список по названию, жанру, году или статусу.</p></div><div class="search-head-actions"><span class="count" id="searchResultCount">0 фильмов</span><button class="search-close" id="closeSearchBtn" type="button" aria-label="Закрыть поиск">×</button></div></div>
       <div class="toolbar">
         <label class="sr-only" for="search">Поиск по библиотеке</label>
         <input id="search" type="search" placeholder="Найти фильм, режиссёра, жанр или заметку…">
@@ -781,12 +843,14 @@
     </section>
   </div>
   <nav class="mobile-nav" aria-label="Разделы кинодневника">
-    <button type="button" data-nav="search" aria-current="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></span><small>Поиск</small></button>
-    <button type="button" data-nav="collection" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><small>Коллекция</small></button>
-    <button type="button" data-nav="watchlist" aria-current="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.75 5.57 6.15.9-4.45 4.34 1.05 6.13L12 17.05l-5.5 2.89 1.05-6.13L3.1 9.47l6.15-.9L12 3Z"/></svg></span><small>Планы</small></button>
+    <div class="mobile-nav-group">
+      <button type="button" data-nav="collection" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><small>Коллекция</small></button>
+      <button type="button" data-nav="watchlist" aria-current="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m12 3 2.75 5.57 6.15.9-4.45 4.34 1.05 6.13L12 17.05l-5.5 2.89 1.05-6.13L3.1 9.47l6.15-.9L12 3Z"/></svg></span><small>Планы</small></button>
+    </div>
     <button type="button" data-nav="add" class="nav-add" aria-current="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><small>Добавить</small></button>
     <button type="button" data-nav="stats" aria-current="false"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20V11h4v9M10 20V4h4v16M16 20v-7h4v7M3 20h18"/></svg></span><small>Статистика</small></button>
   </nav>
+  <button class="floating-search" id="floatingSearchBtn" type="button" aria-label="Открыть поиск и фильтры"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg></button>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script>
@@ -1013,84 +1077,13 @@
           }
           if (/^(?:список\s+)?(?:фильмы|фильмов|кинолента)\s*[:：]?\s*$/i.test(line)) {
             mode = 'movies';
-            currentGenre = '';
-            continue;
-          }
-          const explicitGenre = line.match(/^(?:жанр|genre)\s*[:：=-]\s*(.+)$/i);
-          if (explicitGenre) {
-            currentGenre = canonicalGenre(explicitGenre[1]);
-            mode = 'movies';
-            continue;
-          }
-          const bracketHeader = line.match(/^\[([^\]]{1,40})\]$/);
-          const heading = line.match(/^(?:#{1,6}\s*)?(.{1,40}?)[：:]$/u);
-          const knownLineGenre = knownGenres.get(normalizeGenre(line.replace(/^#{1,6}\s*/, '')));
-          if (mode === 'genres') {
-            if (knownLineGenre || bracketHeader || heading) {
-              const name = knownLineGenre || (bracketHeader && bracketHeader[1]) || (heading && heading[1]);
-              const genre = canonicalGenre(name);
-              if (genre) catalogGenres.set(normalizeGenre(genre), genre);
-            } else addGenreCatalogLine(line);
-            continue;
-          }
-          if (bracketHeader || heading || knownLineGenre) {
-            const name = knownLineGenre || (bracketHeader && bracketHeader[1]) || (heading && heading[1]);
-            currentGenre = canonicalGenre(name);
-            continue;
-          }
-          addMovie(line);
-        }
-        return parsedMovies.filter(Boolean);
-      }
-      async function readTextFile(file) {
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes);
-        if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be').decode(bytes);
-        try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
-        catch { return new TextDecoder('windows-1251').decode(bytes); }
-      }
-      function parseMovieArray(raw) {
-        if (!raw) return [];
-        const parsed = JSON.parse(raw);
-        const rows = Array.isArray(parsed) ? parsed : parsed?.movies;
-        return Array.isArray(rows) ? rows.map(cleanMovie).filter(Boolean) : [];
-      }
-      function readLocalStorageMovies() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          return { raw, movies: parseMovieArray(raw) };
-        }
-        catch { return { raw: null, movies: [] }; }
-      }
-      function readLocalStorageFallback() {
+ 
         try {
           const raw = localStorage.getItem(STORAGE_FALLBACK_KEY);
           if (!raw) return null;
           const parsed = JSON.parse(raw);
           if (!Array.isArray(parsed.movies)) return null;
-          return { movies: parsed.movies.map(cleanMovie).filter(Boolean), updatedAt: Number(parsed.updatedAt) || 0, seedApplied: Boolean(parsed.seedApplied), legacyMigrated: Boolean(parsed.legacyMigrated) };
-        } catch { return null; }
-      }
-      function openMovieDatabase() {
-        return new Promise((resolve, reject) => {
-          if (!('indexedDB' in window)) { reject(new Error('IndexedDB недоступна')); return; }
-          let request;
-          try { request = indexedDB.open(DATABASE_NAME, 1); }
-          catch (error) { reject(error); return; }
-          request.onupgradeneeded = () => {
-            const db = request.result;
-            if (!db.objectStoreNames.contains(DATABASE_STORE)) db.createObjectStore(DATABASE_STORE, { keyPath: 'id' });
-          };
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error || new Error('Не удалось открыть базу фильмов'));
-          request.onblocked = () => reject(new Error('База фильмов занята другой вкладкой'));
-        });
-      }
-      function readDatabaseRows() {
-        return new Promise((resolve, reject) => {
-          const transaction = movieDatabase.transaction(DATABASE_STORE, 'readonly');
-          const request = transaction.objectStore(DATABASE_STORE).getAll();
-          request.onsuccess = () => resolve(request.result || []);
+          return { movies: parsed.movies.mquest.onsuccess = () => resolve(request.result || []);
           request.onerror = () => reject(request.error || new Error('Не удалось прочитать базу фильмов'));
           transaction.onabort = () => reject(transaction.error || new Error('Чтение базы отменено'));
         });
@@ -1104,79 +1097,13 @@
           for (const movie of rows) store.put(movie);
           transaction.oncomplete = () => resolve();
           transaction.onerror = () => reject(transaction.error || new Error('Не удалось сохранить базу фильмов'));
-          transaction.onabort = () => reject(transaction.error || new Error('Сохранение базы отменено'));
-        });
-      }
-      function writeLocalStorageFallback(rows, meta) {
-        try {
-          localStorage.setItem(STORAGE_FALLBACK_KEY, JSON.stringify({ movies: rows, updatedAt: meta.updatedAt, seedApplied: Boolean(meta.seedApplied), legacyMigrated: true }));
-          return true;
-        } catch { return false; }
-      }
-      async function initializeMovieStorage() {
-        const legacy = readLocalStorageMovies();
-        const fallback = readLocalStorageFallback();
-        try {
-          movieDatabase = await openMovieDatabase();
-          const storedRows = await readDatabaseRows();
-          const storedMeta = storedRows.find(row => row?.id === DATABASE_META_ID);
-          let selectedMovies = storedRows.filter(row => row?.id !== DATABASE_META_ID).map(cleanMovie).filter(Boolean);
-          storageMeta = storedMeta
-            ? { seedApplied: Boolean(storedMeta.seedApplied), legacyMigrated: Boolean(storedMeta.legacyMigrated), updatedAt: Number(storedMeta.updatedAt) || 0 }
-            : { seedApplied: legacy.raw !== null, legacyMigrated: false, updatedAt: 0 };
-
-          if (fallback && (!storedMeta || fallback.updatedAt > storageMeta.updatedAt)) {
-            selectedMovies = fallback.movies;
-            storageMeta = { seedApplied: fallback.seedApplied, legacyMigrated: true, updatedAt: fallback.updatedAt || Date.now() };
-          } else if (!storedMeta) {
-            selectedMovies = legacy.movies;
-            storageMeta = { ...storageMeta, legacyMigrated: true, updatedAt: Date.now() };
-          } else if (!storageMeta.legacyMigrated && !selectedMovies.length && legacy.movies.length) {
-            // Recover an older localStorage library if a previous IndexedDB attempt left an empty database.
-            selectedMovies = legacy.movies;
-            storageMeta = { ...storageMeta, seedApplied: true, legacyMigrated: true, updatedAt: Date.now() };
-          }
-
-          const needsWrite = !storedMeta || !storageMeta.legacyMigrated || (fallback && fallback.updatedAt > (Number(storedMeta.updatedAt) || 0));
-          if (needsWrite) await writeDatabaseRows(selectedMovies, storageMeta);
-          storageBackend = 'indexedDB';
-          try { localStorage.removeItem(STORAGE_FALLBACK_KEY); } catch { /* The database copy is already committed. */ }
-          try { navigator.storage?.persist?.().catch(() => false); } catch { /* Persistence requests are best effort. */ }
-          return selectedMovies;
-        } catch (error) {
-          try { movieDatabase?.close(); } catch { /* Ignore a failed database close. */ }
-          movieDatabase = null;
-          storageBackend = fallback ? 'fallback' : 'localStorage';
-          storageMeta = fallback
-            ? { seedApplied: fallback.seedApplied, legacyMigrated: true, updatedAt: fallback.updatedAt }
+          transaction.onabort = () => reject(transaction.error || nedAt: fallback.updatedAt }
             : { seedApplied: legacy.raw !== null, legacyMigrated: false, updatedAt: 0 };
           return fallback ? fallback.movies : legacy.movies;
         }
       }
       async function saveMovies() {
-        await storageReady;
-        const snapshot = movies.map(movie => ({ ...movie }));
-        const save = async () => {
-          const updatedAt = Date.now();
-          if (storageBackend === 'indexedDB' && movieDatabase) {
-            try {
-              await writeDatabaseRows(snapshot, { ...storageMeta, updatedAt });
-              storageMeta.updatedAt = updatedAt;
-              try { localStorage.removeItem(STORAGE_FALLBACK_KEY); } catch { /* The database write succeeded. */ }
-              return true;
-            } catch {
-              storageBackend = 'fallback';
-              storageMeta.updatedAt = updatedAt;
-            }
-          }
-          if (storageBackend === 'fallback') {
-            storageMeta.updatedAt = updatedAt;
-            if (writeLocalStorageFallback(snapshot, storageMeta)) return true;
-            showToast('Не удалось сохранить базу. Освободите место и экспортируйте библиотеку.');
-            return false;
-          }
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        await storageReadyhot));
             storageMeta.updatedAt = updatedAt;
             return true;
           } catch {
@@ -1193,41 +1120,7 @@
       }
       function formatDate(value) {
         const [year, month, day] = value.split('-').map(Number);
-        return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(year, month - 1, day));
-      }
-      function plural(count, forms) {
-        const n = Math.abs(count) % 100;
-        const last = n % 10;
-        if (n > 10 && n < 20) return forms[2];
-        if (last > 1 && last < 5) return forms[1];
-        if (last === 1) return forms[0];
-        return forms[2];
-      }
-      function showToast(message) {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
-      }
-      function syncFilterOptions(select, values, firstLabel) {
-        const previous = select.value;
-        const unique = [...new Set(values.filter(Boolean).map(String))].sort((a, b) => a.localeCompare(b, 'ru', { numeric: true }));
-        select.innerHTML = `<option value="">${firstLabel}</option>${unique.map(value => `<option value="${escapeHTML(value)}">${escapeHTML(value)}</option>`).join('')}`;
-        if (unique.includes(previous)) select.value = previous;
-      }
-      function setViewMode(mode, persist = true) {
-        viewMode = mode === 'grid' ? 'grid' : 'list';
-        list.classList.toggle('view-grid', viewMode === 'grid');
-        document.querySelectorAll('.view-button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.view === viewMode)));
-        if (persist) try { localStorage.setItem(VIEW_KEY, viewMode); } catch { /* View switch still works for this session. */ }
-      }
-      function setActiveNav(section) {
-        activeNavSection = section;
-        document.querySelectorAll('.mobile-nav [data-nav]').forEach(button => button.setAttribute('aria-current', String(button.dataset.nav === section ? 'page' : 'false')));
-      }
-      function viewDates(movie) {
-        return movie.status === 'watched' ? [movie.watchedAt, ...movie.rewatchDates].filter(Boolean).sort() : [];
+        return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', mon[];
       }
     function setCoverflowInfoOpen(open) {
         coverflowInfoOpen = Boolean(open);
@@ -1254,7 +1147,7 @@
         const topGenres = sortedGenres.slice(0, 6);
         if (sortedGenres.length > 6) topGenres.push(['Другие жанры', sortedGenres.slice(6).reduce((sum, item) => sum + item[1], 0)]);
         const genreChart = document.getElementById('genreChart');
-        genreChart.innerHTML = topGenres.length ? topGenres.map(([genre, count]) => `<div class="genre-row"><span class="genre-name">${escapeHTML(`${genreIcons[genre] || '🎞️'} ${genre}`)}</span><div class="genre-bar-track"><div class="genre-bar" style="width:${Math.max(4, count / topGenres[0][1] * 100)}%"></div></div><span class="genre-count">${count}</span></div>`).join('') : '<span class="chart-empty">Добавьте жанр фильму, чтобы увидеть распределение.</span>';
+        genreChart.innerHTML = topGenres.length ? topGenres.map(([genre, count]) => `<div claount}</span></div>`).join('') : '<span class="chart-empty">Добавьте жанр фильму, чтобы увидеть распределение.</span>';
       }
       function render() {
         const search = document.getElementById('search');
@@ -2248,11 +2141,29 @@
         document.body.classList.remove('stats-open', 'search-open');
         setCoverflowInfoOpen(false);
         setFormExpanded(true);
+        setActiveNav('add');
         requestAnimationFrame(() => fields.title.focus());
       };
+      const closeSearch = () => {
+        document.body.classList.remove('search-open');
+        const search = document.getElementById('search');
+        if (search) search.blur();
+      };
+      const openSearch = () => {
+        document.body.classList.remove('stats-open');
+        setFormExpanded(false);
+        setCoverflowInfoOpen(false);
+        document.body.classList.add('search-open');
+        setActiveNav('collection');
+        window.setTimeout(() => document.getElementById('search').focus(), 220);
+      };
+      document.getElementById('floatingSearchBtn').addEventListener('click', openSearch);
+      document.getElementById('closeSearchBtn').addEventListener('click', closeSearch);
+      document.getElementById('searchBackdrop').addEventListener('click', closeSearch);
       document.getElementById('quickAddBtn').addEventListener('click', openAddForm);
       document.getElementById('showResultsBtn').addEventListener('click', () => {
-        document.body.classList.remove('search-open', 'stats-open');
+        closeSearch();
+        document.body.classList.remove('stats-open');
         setFormExpanded(false);
         const section = document.getElementById('filterCollection').value === 'planned' ? 'watchlist' : 'collection';
         setActiveNav(section);
@@ -2260,15 +2171,6 @@
       });
       document.querySelectorAll('.mobile-nav [data-nav]').forEach(button => button.addEventListener('click', () => {
         const section = button.dataset.nav;
-        if (section === 'search') {
-          document.body.classList.remove('stats-open');
-          setFormExpanded(false);
-          document.body.classList.add('search-open');
-          setActiveNav('search');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          window.setTimeout(() => document.getElementById('search').focus(), 220);
-          return;
-        }
         if (section === 'add') { openAddForm(); return; }
         if (section === 'collection' || section === 'watchlist') {
           setCoverflowInfoOpen(false);
@@ -2377,3 +2279,4 @@
   </script>
 </body>
 </html>
+

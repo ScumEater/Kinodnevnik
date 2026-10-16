@@ -2,6 +2,8 @@ name: Build Android APK
 
 on:
   push:
+    branches:
+      - codex/android-nav-search
     tags:
       - "v*"
   workflow_dispatch:
@@ -12,11 +14,13 @@ on:
         type: string
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -43,31 +47,51 @@ jobs:
         working-directory: android-app
         run: gradle --no-daemon --stacktrace assembleDebug
 
-      - name: Prepare release files
-        id: release_files
-        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+      - name: Verify APK
+        run: |
+          apk="android-app/app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$apk"
+          unzip -t "$apk" >/dev/null
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose "$apk"
+          "$ANDROID_HOME/build-tools/35.0.1/aapt" dump badging "$apk" > /tmp/kinodnevnik-badging.txt
+          grep -F "package: name='ru.nick.kinodnevnik' versionCode='13' versionName='1.12'" /tmp/kinodnevnik-badging.txt
+
+      - name: Stage APK and project archive
+        run: |
+          mkdir -p release-files
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk release-files/Kinodnevnik-1.12.apk
+          zip -qr release-files/Kinodnevnik-project-1.12.zip README.md movie_tracker.html movie-library.json android-app \
+            -x 'android-app/.gradle/*' 'android-app/**/build/*' 'android-app/local.properties'
+
+      - name: Upload verified build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kinodnevnik-${{ github.run_number }}
+          path: release-files/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Kinodnevnik-${{ github.run_number }}
+          path: release-files
+
+      - name: Publish APK and source archive
         env:
+          GH_TOKEN: ${{ github.token }}
           REQUESTED_TAG: ${{ inputs.release_tag }}
         run: |
           release_tag="${REQUESTED_TAG:-${GITHUB_REF_NAME}}"
-          version="${release_tag#v}"
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "tag=${release_tag}" >> "$GITHUB_OUTPUT"
-          cp android-app/app/build/outputs/apk/debug/app-debug.apk "Kinodnevnik-${version}.apk"
-          zip -qr "Kinodnevnik-project-${version}.zip" README.md movie_tracker.html movie-library.json android-app \
-            -x 'android-app/.gradle/*' 'android-app/**/build/*' 'android-app/local.properties'
-
-      - name: Publish APK and source archive
-        if: startsWith(github.ref, 'refs/tags/') || inputs.release_tag != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.release_files.outputs.tag }}
-          RELEASE_VERSION: ${{ steps.release_files.outputs.version }}
-        run: |
-          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" --title "Kinodnevnik $RELEASE_TAG" --generate-notes
+          if ! gh release view "$release_tag" >/dev/null 2>&1; then
+            gh release create "$release_tag" --title "Kinodnevnik $release_tag" --generate-notes
           fi
-          gh release upload "$RELEASE_TAG" \
-            "Kinodnevnik-${RELEASE_VERSION}.apk" \
-            "Kinodnevnik-project-${RELEASE_VERSION}.zip" \
-            --clobber
+          gh release upload "$release_tag" release-files/Kinodnevnik-1.12.apk release-files/Kinodnevnik-project-1.12.zip --clobber
+
